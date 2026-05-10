@@ -1,0 +1,36 @@
+services:
+  catalog_api:
+    build: ./catalog_service
+    container_name: catalog_api
+    restart: always
+    volumes:
+      - catalog_data:/app/data
+
+  order_api:
+    build: ./order_service
+    container_name: order_api
+    restart: always
+    environment:
+      - REDIS_HOST=redis_cache
+    volumes:
+      - order_data:/app/data
+
+  redis_cache:
+    image: redis:7-alpine
+    container_name: redis_cache
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx_gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - catalog_api
+      - order_api
+
+volumes:
+  catalog_data:
+  order_data:
