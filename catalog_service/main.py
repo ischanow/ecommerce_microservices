@@ -37,7 +37,7 @@ class Product(Base):
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Catalog Service",
+    title="Catalog Service - Тлек Рахметолович",
     openapi_url="/openapi.json", # Файл описания API
     docs_url="/docs",            # Адрес самой страницы документации
     root_path="/api/catalog"     # ГЛАВНОЕ: указываем базовый путь для Nginx
