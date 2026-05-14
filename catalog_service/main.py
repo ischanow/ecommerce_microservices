@@ -18,7 +18,7 @@ Base = declarative_base()
 SECRET_KEY = "ecommerce_secret_key"
 ALGORITHM = "HS256"
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/catalog/login")
 
 # Models
 class User(Base):
