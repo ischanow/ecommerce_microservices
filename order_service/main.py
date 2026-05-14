@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, Header
 from sqlalchemy import create_engine, Column, Integer, String, Float, JSON
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from pydantic import BaseModel
+from fastapi.security import OAuth2PasswordBearer
 import redis
 import json
 import os
@@ -12,6 +13,9 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///./data/orders.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+# Используем полный путь для работы через Nginx
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/catalog/login")
 
 # Redis Setup
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -48,7 +52,7 @@ class CartItem(BaseModel):
 
 # Endpoints
 @app.post("/cart")
-def add_to_cart(item: CartItem, authorization: str = Header(...)):
+def add_to_cart(item: CartItem, token: str = Depends(oauth2_scheme)):
     user_id = authorization.split(" ")[1] # Extract token
     cart_key = f"cart:{user_id}"
     
