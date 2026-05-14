@@ -25,7 +25,7 @@ redis_client = redis.Redis(host=REDIS_HOST, port=6379, db=0, decode_responses=Tr
 class Order(Base):
     __tablename__ = "orders"
     id = Column(Integer, primary_key=True, index=True)
-    user_token = Column(String) # In production, extract user ID from JWT
+    user_token = Column(String) # В продакшене здесь будет извлекаться user_id из JWT
     items = Column(JSON)
     total_amount = Column(Float)
 
@@ -35,7 +35,7 @@ app = FastAPI(
     title="Order Service",
     openapi_url="/openapi.json",
     docs_url="/docs",
-    root_path="/api/orders"      # Здесь путь для сервиса заказов
+    root_path="/api/orders"      # Путь для маршрутизации сервиса заказов
 )
 
 def get_db():
@@ -50,10 +50,12 @@ class CartItem(BaseModel):
     quantity: int
     price: float
 
-# Endpoints
+# --- ЭНДПОИНТЫ С ИСПРАВЛЕННОЙ АВТОРИЗАЦИЕЙ ---
+
 @app.post("/cart")
 def add_to_cart(item: CartItem, token: str = Depends(oauth2_scheme)):
-    user_id = authorization.split(" ")[1] # Extract token
+    # Переменная authorization удалена. Используем token напрямую.
+    user_id = token 
     cart_key = f"cart:{user_id}"
     
     current_cart = redis_client.get(cart_key)
@@ -64,15 +66,17 @@ def add_to_cart(item: CartItem, token: str = Depends(oauth2_scheme)):
     return {"message": "Item added to cart", "cart": cart}
 
 @app.get("/cart")
-def get_cart(authorization: str = Header(...)):
-    user_id = authorization.split(" ")[1]
+def get_cart(token: str = Depends(oauth2_scheme)):
+    # Перевели с ручного Header на автоматический Depends
+    user_id = token
     cart_key = f"cart:{user_id}"
     current_cart = redis_client.get(cart_key)
     return json.loads(current_cart) if current_cart else []
 
 @app.post("/checkout")
-def checkout(authorization: str = Header(...), db: Session = Depends(get_db)):
-    user_token = authorization.split(" ")[1]
+def checkout(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    # Перевели с ручного Header на автоматический Depends
+    user_token = token
     cart_key = f"cart:{user_token}"
     
     current_cart = redis_client.get(cart_key)
@@ -87,5 +91,5 @@ def checkout(authorization: str = Header(...), db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_order)
     
-    redis_client.delete(cart_key) # Clear cart after order
+    redis_client.delete(cart_key) # Очищаем корзину после успешного заказа
     return {"message": "Order placed successfully", "order_id": new_order.id, "total": total}
