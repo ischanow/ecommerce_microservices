@@ -3,5 +3,6 @@ uvicorn
 sqlalchemy
 pydantic
 python-jose[cryptography]
-passlib[bcrypt==3.2.0]
+passlib
+bcrypt==3.2.0
 python-multipart
